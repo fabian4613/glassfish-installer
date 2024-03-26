@@ -1,0 +1,11 @@
+- name: Generar script de creacion de clusters para GlassFish
+  ansible.builtin.template:
+    src: create_cluster.sh.j2
+    dest: "{{ gf_download_dir }}/create_cluster.sh"
+    mode: '0755'
+  tags: create
+
+- name: Ejecutar script de creacion de clusteres
+  ansible.builtin.shell: 
+    cmd: "{{ gf_download_dir }}/create_cluster.sh"
+  tags: create    

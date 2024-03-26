@@ -1,0 +1,14 @@
+  - name: Firewalld ON
+    service:
+      name: firewalld
+      state: started
+      enabled: yes
+
+  - name: Crontab RESTART
+    service:
+      name: crond
+      state: restarted
+  
+  - name: Clear TXT
+    become: true 
+    shell: "rm -f /tmp/*.txt"

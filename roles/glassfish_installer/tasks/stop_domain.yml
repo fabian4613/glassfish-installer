@@ -1,0 +1,15 @@
+- name: Generar script de stop de Domain - [Test GF]
+  ansible.builtin.template:
+    src: stop_domain.sh.j2
+    dest: "{{ gf_download_dir }}/stop_domain.sh"
+    mode: "0755"
+  tags:
+    - create
+    - install
+
+- name: Ejecutar script de stop de Domain - [Test GF]
+  ansible.builtin.shell:
+    cmd: "{{ gf_download_dir }}/stop_domain.sh"
+  tags:
+    - create
+    - install

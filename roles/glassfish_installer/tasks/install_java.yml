@@ -1,0 +1,63 @@
+# https://sites.google.com/view/java-se-download-url-converter - Gracias KaDiWa.
+
+# - name: Descargar archivo Java
+#   get_url:
+#     url: "{{ java_download_url }}"
+#     dest: "{{ java_download_dest }}"
+#     timeout: 120
+#     validate_certs: no
+
+# - name: Crear directorio destino para Java
+#   ansible.builtin.file:
+#     path: "{{ glassfish_home }}/{{ java_version }}"  # Usa el nombre específico que deseas
+#     state: directory
+#     owner: "{{ glassfish_uid_user }}"
+#     group: "{{ glassfish_gid_user }}"
+#     mode: '0755'
+
+# - name: Extraer Java en el directorio específico
+#   ansible.builtin.unarchive:
+#     src: "{{ java_download_dest }}"
+#     dest: "{{ glassfish_home }}/{{ java_version }}"
+#     remote_src: yes
+#     extra_opts: [--strip-components=1]  # Elimina el directorio raíz del tarball
+#     owner: "{{ glassfish_uid_user }}"
+#     group: "{{ glassfish_gid_user }}"
+
+# Verificar si Java ya está instalado
+- name: Verificar si Java ya está instalado
+  ansible.builtin.stat:
+    path: "{{ glassfish_home }}/{{ java_version }}"
+  register: java_directory
+  tags: install     
+
+# Copiar Java al host solo si no está instalado
+- name: Copiar Java al host
+  copy:
+    src: "{{ java_version }}.tar.gz"
+    dest: "/tmp/{{ java_version }}.tar.gz"
+  when: not java_directory.stat.exists
+  tags: install     
+
+# Crear directorio destino para Java solo si no está instalado
+- name: Crear directorio destino para Java
+  ansible.builtin.file:
+    path: "{{ glassfish_home }}/{{ java_version }}" 
+    state: directory
+    owner: "{{ glassfish_uid_user }}"
+    group: "{{ glassfish_gid_user }}"
+    mode: '0755'
+  when: not java_directory.stat.exists
+  tags: install       
+
+# Extraer Java en el directorio específico solo si no está instalado
+- name: Extraer Java en el directorio específico
+  ansible.builtin.unarchive:
+    src: "/tmp/{{ java_version }}.tar.gz"
+    dest: "{{ glassfish_home }}/{{ java_version }}"
+    remote_src: yes
+    extra_opts: [--strip-components=1]  # Elimina el directorio raíz del tarball    
+    owner: "{{ glassfish_uid_user }}"
+    group: "{{ glassfish_gid_user }}"
+  when: not java_directory.stat.exists
+  tags: install       

@@ -1,0 +1,11 @@
+- name: Dar todos los permisos al directorio GLASSFISH_HOME
+  file:
+    path: "{{ glassfish_home }}"
+    state: directory
+    recurse: yes
+    owner: "{{ glassfish_user }}"
+    group: "{{ glassfish_user }}"
+    mode: "u+rwx,g+rwx,o+rwx"
+  tags:
+    - create
+    - install

@@ -1,0 +1,80 @@
+# Falta crear una tarea para administrar network listener
+---
+- name: Incluir variables para instalacion o configuracion de Glassfish.
+  include_vars: "{{ inventory_hostname }}.yml"
+  tags:
+    - create
+    - install
+
+- name: Create User en O.S
+  include_tasks: create_user.yml
+  tags: create
+
+# DGSISAN
+- name: Agregar tarea de add scripts - DGSISAN
+  include_tasks: dgsisan_scripts.yml
+  tags: dgsisan_scripts
+#
+
+- name: Instalar Java
+  include_tasks: install_java.yml
+  tags: install
+
+- name: Instalar Glassfish
+  include_tasks: install_glassfish.yml
+  tags:
+    - install
+    - dgsisan_dependencies
+
+- name: DAS password
+  include_tasks: create_das_password.yml
+  tags: create
+
+- name: Crear clusters
+  include_tasks: create_clusters.yml
+  tags: create
+
+# - name: Crear HTTP Listeners
+#   include_tasks: create_http_listeners.yml
+
+- name: Crear Instancias
+  include_tasks: create_instance.yml
+  tags: create
+
+- name: Crear JDBC Connection Pools
+  include_tasks: create_jdbc_connection_pools.yml
+  tags: create
+
+- name: Crear JDBC Resources
+  include_tasks: create_jdbc_resources.yml
+  tags: create
+
+- name: Crear System Properties
+  include_tasks: create_system_properties.yml
+  tags: create
+
+- name: Crear JVM Options
+  include_tasks: create_jvm_options.yml
+  tags: create
+
+- name: Reiniciar Domain Glassfish
+  include_tasks: restart_domain.yml
+  tags:
+    - create
+    - install
+
+- name: Detener Domain Glassfish para normalizar agregado de Permisos
+  include_tasks: stop_domain.yml
+  tags:
+    - create
+    - install
+
+- name: Agregar Permisos a usuario en GLASSFISH_HOME
+  include_tasks: add_permission.yml
+  tags:
+    - create
+    - install
+
+- name: Desinstalar Glassfish
+  include_tasks: uninstall_glassfish.yml
+  tags: gf_uninstall

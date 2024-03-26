@@ -1,0 +1,12 @@
+---
+# User for asadmin in bashrc
+glassfish_user: "glassfish"
+glassfish_home: "/GLASSFISH_HOME"
+gf_download_dir: "/tmp"
+gf_password_dir: "{{ gf_download_dir }}/das_password.txt"
+gf_new_password_dir: "{{ gf_download_dir }}/das_new_password.txt"
+gf_version: "3.1.2.2"
+gf_path_version: "glassfish3"
+gf_domain_name: "domain1"
+gf_asadmin_bin: "{{ glassfish_home }}/{{ gf_path_version }}/bin/asadmin"
+gf_asadmin_user: "admin"

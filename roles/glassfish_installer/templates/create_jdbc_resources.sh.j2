@@ -1,0 +1,39 @@
+#!/bin/bash
+
+set -e
+
+. /home/{{ glassfish_user }}/.bash_profile
+
+# Definición de variables para el comando asadmin
+ASADMIN="{{ gf_asadmin_bin }}"
+PASSWORDFILE="{{ gf_password_dir }}"
+ADMIN_USER="{{ gf_asadmin_user }}"
+
+{% for jdbc_resource in jdbc_resources %}
+# Verificar si el recurso JDBC ya existe
+RESOURCES_LIST=$(${ASADMIN} --user ${ADMIN_USER} --passwordfile ${PASSWORDFILE} list-jdbc-resources {{ jdbc_resource.target | default('server') }})
+if echo "${RESOURCES_LIST}" | grep -q "^{{ jdbc_resource.jndi_name }}$"; then
+  echo "El recurso JDBC {{ jdbc_resource.jndi_name }} ya existe en el target {{ jdbc_resource.target }}. Omitiendo creación."
+else
+  echo "Creando recurso JDBC: {{ jdbc_resource.jndi_name }}"
+  # Inicializar CMD con los componentes del comando hasta --target
+  CMD="$ASADMIN --user $ADMIN_USER --passwordfile $PASSWORDFILE create-jdbc-resource \
+      --connectionpoolid {{ jdbc_resource.connectionpoolid }} \
+      --enabled={{ jdbc_resource.enabled | default('true') }} \
+      --description '{{ jdbc_resource.description | default('') }}' \
+      --target {{ jdbc_resource.target | default('server') }}"
+
+  # Añadir --property si properties están definidas
+  {% if jdbc_resource.properties is defined %}
+  PROPERTIES="{% for key, value in jdbc_resource.properties.items() %}{{ key }}={% set escaped_value = value | replace("\\", "\\\\") | replace("/", "\\/") | replace(";", "\\;") | replace("!", "\\!") | replace("*", "\\*") | replace("=", "\\=") | replace(":", "\\:") %}{{ escaped_value }}{% if not loop.last %}:{% endif %}{% endfor %}"
+  CMD+=" --property \"$PROPERTIES\""
+  {% endif %}
+
+  # Añadir el JNDI name al final del comando
+  CMD+=" {{ jdbc_resource.jndi_name }}"
+
+  # Ejecutar el comando
+  echo "Ejecutando: $CMD"
+  eval "$CMD"
+fi
+{% endfor %}

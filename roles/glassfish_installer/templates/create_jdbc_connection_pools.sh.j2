@@ -1,0 +1,48 @@
+#!/bin/bash
+
+. /home/{{ glassfish_user }}/.bash_profile
+
+# Consume variables de Ansible
+ASADMIN="{{ gf_asadmin_bin }}"
+PASSWORDFILE="{{ gf_password_dir }}"
+ADMIN_USER="{{ gf_asadmin_user }}"
+
+{% if jdbc_connection_pools is defined and jdbc_connection_pools | length > 0 %}
+  {% for jdbc_connection_pool in jdbc_connection_pools %}
+    # Verificar si el pool de conexiones JDBC ya existe
+    POOLS_LIST=$(${ASADMIN} --user ${ADMIN_USER} --passwordfile ${PASSWORDFILE} list-jdbc-connection-pools)
+    if echo "${POOLS_LIST}" | grep -q "^{{ jdbc_connection_pool.pool_name }}$"; then
+      echo "El pool de conexiones JDBC {{ jdbc_connection_pool.pool_name }} ya existe. Omitiendo creación."
+    else
+      echo "Creando el pool de conexiones JDBC: {{ jdbc_connection_pool.pool_name }}"
+
+      # Inicializa la cadena de propiedades asegurándose de que esté vacía si no hay propiedades definidas
+      PROPERTIES="{% if jdbc_connection_pool.properties %}{% for key, value in jdbc_connection_pool.properties.items() %}{{ key }}={{ value | replace('\\', '\\\\') | replace('/', '\\/') | replace('!', '\\!') | replace('=', '\\=') | replace(';', '\\;') | replace(':', '\\:') }}{% if not loop.last %}:{% endif %}{% endfor %}{% endif %}"
+
+      # Construir la cadena de comandos adicionales, si están definidos
+      {% set additional_attributes = [] %}
+      {% if jdbc_connection_pool.additional_attributes %}
+        {% for key, value in jdbc_connection_pool.additional_attributes.items() %}
+          {% set additional_attributes = additional_attributes + ['--' + key + '=\"' + value|string + '\"'] %}
+        {% endfor %}
+      {% endif %}
+      ADDITIONAL_ATTRIBUTES="{{ additional_attributes | join(' ') }}"
+
+      # Construye el comando completo, incluyendo todas las partes
+      CMD="$ASADMIN --user $ADMIN_USER --passwordfile $PASSWORDFILE create-jdbc-connection-pool \
+        --datasourceclassname \"{{ jdbc_connection_pool.datasourceClassName }}\" \
+        --restype \"{{ jdbc_connection_pool.resourceType }}\" \
+        --property \"${PROPERTIES}\" \
+        $ADDITIONAL_ATTRIBUTES \
+        \"{{ jdbc_connection_pool.pool_name }}\""
+
+      # Debugging: imprimir el comando para verificar su correctitud antes de ejecutarlo
+      echo "Ejecutando comando: ${CMD}"
+      
+      # Ejecutar el comando
+      eval "${CMD}"
+    fi
+  {% endfor %}
+{% else %}
+  echo "No hay jdbc_connection_pools definidos, omitiendo la creación de pools de conexiones JDBC."
+{% endif %}

@@ -1,0 +1,11 @@
+- name: Generar script de creacion de JDBC Resources para GlassFish
+  ansible.builtin.template:
+    src: create_jdbc_resources.sh.j2
+    dest: "{{ gf_download_dir }}/create_jdbc_resources.sh"
+    mode: '0755'
+  tags: create        
+        
+- name: Ejecutar script de creacion de JDBC Resources
+  ansible.builtin.shell: 
+    cmd: "{{ gf_download_dir }}/create_jdbc_resources.sh"
+  tags: create        

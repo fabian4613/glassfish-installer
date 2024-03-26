@@ -1,0 +1,61 @@
+# CREAR USUARIO
+- name: Crear GID Glassfish si no existe
+  group:
+    name: "{{ glassfish_user }}"  # Se puede cambiar esto por el nombre real del grupo si es diferente
+    gid: "{{ glassfish_gid_user }}"
+    state: present
+  tags: create        
+
+- name: Crear Usuario Glassfish
+  user:
+    name: "{{ glassfish_user }}"
+    comment: "{{ glassfish_user }} User"
+    uid: "{{ glassfish_uid_user }}"
+    group: "{{ glassfish_user }}"
+    createhome: yes
+    shell: /bin/bash
+  tags: create        
+
+- name: Crear directorio GLASSFISH_HOME
+  file:
+    path: "{{ glassfish_home }}"
+    state: directory
+    owner: "{{ glassfish_user }}"
+    group: "{{ glassfish_user }}"     
+  tags: create    
+
+- name: Establecer variables de entorno para el usuario Glassfish
+  blockinfile:
+    path: "/home/{{ glassfish_user }}/.bash_profile"
+    block: |
+      # Variables de entorno para Glassfish
+      export GLASSFISH_BASE={{ glassfish_home }}
+      export JAVA_HOME=$GLASSFISH_BASE/{{ java_version }}
+      export GLASSFISH_HOME=$GLASSFISH_BASE/{{ gf_path_version }}/{{ glassfish_user }}
+      export AS_JAVA=$JAVA_HOME      
+      export PATH=$PATH:$JAVA_HOME/bin
+      export PATH=$PATH:$GLASSFISH_HOME/bin      
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - GLASSFISH ENV"
+    create: yes
+    owner: "{{ glassfish_user }}"
+    group: "{{ glassfish_user }}"
+    mode: '0644'
+  become: true
+  become_user: root
+  tags: create    
+  
+- name: Agregar alias de scripts de Glassfish al perfil del usuario
+  blockinfile:
+    path: "/home/{{ glassfish_user }}/.bashrc"
+    block: |
+      # Alias para scripts de Glassfish
+      source {{ glassfish_home }}/scripts/alias.sh
+    marker: "# {mark} ANSIBLE MANAGED BLOCK Glassfish Alias"
+    state: present
+    owner: "{{ glassfish_user }}"
+    group: "{{ glassfish_user }}"
+    mode: '0644'    
+  become: true
+  become_user: root    
+  when: os_alias_scripts is defined and os_alias_scripts
+  tags: create      

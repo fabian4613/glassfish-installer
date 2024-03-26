@@ -1,0 +1,16 @@
+# tasks/enviar_scripts.yml
+- name: Enviar Scripts según el entorno definido en inventory - DGSISAN
+  copy:
+    src: "{{ script_folder }}/"
+    dest: "{{ glassfish_home }}/scripts/"
+  tags: dgsisan_scripts
+
+- name: Dar todos los permisos a usuario glassfish al directorio Scripts
+  file:
+    path: "{{ glassfish_home }}/scripts"
+    state: directory
+    recurse: yes
+    owner: "{{ glassfish_user }}"
+    group: "{{ glassfish_user }}"
+    mode: "u+rwx,g+rwx,o+rwx"
+  tags: dgsisan_scripts

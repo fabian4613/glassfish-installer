@@ -1,0 +1,7 @@
+- name: Instalar dependencias para extracción
+  package:
+    name:
+      - gzip
+      - tar
+    state: present
+  tags: install         

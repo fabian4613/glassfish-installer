@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Cargar el perfil del usuario glassfish
+. /home/{{ glassfish_user }}/.bash_profile
+
+ASADMIN="{{ gf_asadmin_bin }}"
+PASSWORDFILE="{{ gf_password_dir }}"
+ADMIN_USER="{{ gf_asadmin_user }}"
+
+{% if jvm_options is defined and jvm_options | length > 0 %}
+  {% for item in jvm_options %}
+  
+  TARGET="{{ item.target }}"
+  echo "Verificando y creando opciones JVM para el target: $TARGET"
+  
+  # Obtener la lista actual de opciones JVM
+  CURRENT_JVM_OPTIONS=$($ASADMIN --user $ADMIN_USER --passwordfile $PASSWORDFILE list-jvm-options --target $TARGET)
+  
+  {% for option in item.options %}
+    OPTION_STRING="{{ option }}"
+    echo "Revisando si la opción JVM '$OPTION_STRING' existe en el target $TARGET"
+    
+    # Comprobar si la opción ya existe
+    if echo "$CURRENT_JVM_OPTIONS" | grep -F -- "$OPTION_STRING"; then
+      echo "La opción JVM '$OPTION_STRING' ya existe en el target $TARGET, omitiendo creación."
+    else
+      echo "La opción JVM '$OPTION_STRING' no existe en el target $TARGET. Creándola."
+      
+      # Agregar la opción JVM
+      if [[ "$OPTION_STRING" == "-- -client" ]]; then
+        echo "Aplicando opción JVM: -client en $TARGET"
+        $ASADMIN --user $ADMIN_USER --passwordfile $PASSWORDFILE create-jvm-options --target $TARGET -- -client
+      elif [[ "$OPTION_STRING" == "-- -server" ]]; then
+        echo "Aplicando opción JVM: -server en $TARGET"
+        $ASADMIN --user $ADMIN_USER --passwordfile $PASSWORDFILE create-jvm-options --target $TARGET -- -server
+      else
+        echo "Aplicando opción JVM: $OPTION_STRING en $TARGET"
+        $ASADMIN --user $ADMIN_USER --passwordfile $PASSWORDFILE create-jvm-options --target $TARGET "$OPTION_STRING"
+      fi
+    fi
+  {% endfor %}
+  
+  {% endfor %}
+{% else %}
+  echo "No hay jvm_options definidos, omitiendo la creación de opciones JVM."
+{% endif %}

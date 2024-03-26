@@ -1,0 +1,40 @@
+#!/bin/bash
+
+. /home/{{ glassfish_user }}/.bash_profile
+
+{% if http_listeners is defined and http_listeners | length > 0 %}
+  {% for listener in http_listeners %}
+    # Definición de variables para el listener basado en propiedades de Ansible
+    LISTENER_NAME="{{ listener.name }}"
+    LISTENER_ADDRESS="{{ listener.address }}"
+    LISTENER_PORT="{{ listener.port }}"
+    TARGET="{{ listener.target | default('server') }}"
+
+    # Eliminando el listener HTTP existente si está definido
+    echo "Eliminando el listener HTTP existente: $LISTENER_NAME"
+    $ASADMIN --user $ADMIN_USER --passwordfile $PASSWORDFILE delete-http-listener --target $TARGET $LISTENER_NAME
+
+    # Creando un nuevo listener HTTP
+    echo "Creando el listener HTTP: $LISTENER_NAME"
+    CMD="$ASADMIN --user $ADMIN_USER --passwordfile $PASSWORDFILE create-http-listener \
+        --listenerport $LISTENER_PORT \
+        --target $TARGET \
+        $LISTENER_NAME"
+
+    # Añadir opciones solo si están definidas
+    {% if listener.default_virtual_server %}CMD+=" --default-virtual-server {{ listener.default_virtual_server }}" {% endif %}
+    {% if listener.server_name %}CMD+=" --servername {{ listener.server_name }}" {% endif %}
+    {% if listener.acceptor_threads %}CMD+=" --acceptorthreads {{ listener.acceptor_threads }}" {% endif %}
+    {% if listener.xpowered_by %}CMD+=" --xpoweredby {{ listener.xpowered_by }}" {% endif %}
+    {% if listener.redirect_port %}CMD+=" --redirectport {{ listener.redirect_port }}" {% endif %}
+    {% if listener.security %}CMD+=" --securityenabled {{ listener.security }}" {% endif %}
+    {% if listener.status %}CMD+=" --enabled {{ listener.status }}" {% endif %}
+    {% if listener.address %}CMD+=" --listeneraddress {{ listener.address }}" {% endif %}
+
+    # Ejecutar el comando completo
+    echo "Ejecutando: $CMD"
+    eval $CMD
+  {% endfor %}
+{% else %}
+  echo "No hay http_listeners definidos, omitiendo la creación de listeners HTTP."
+{% endif %}

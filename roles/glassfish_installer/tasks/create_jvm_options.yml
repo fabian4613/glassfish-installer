@@ -1,0 +1,11 @@
+- name: Generar script de creacion de JVM Options para GlassFish
+  ansible.builtin.template:
+    src: create_jvm_options.sh.j2
+    dest: "{{ gf_download_dir }}/create_jvm_options.sh"
+    mode: '0755'
+  tags: create    
+
+- name: Ejecutar script de creacion de JVM Options
+  ansible.builtin.shell: 
+    cmd: "{{ gf_download_dir }}/create_jvm_options.sh"
+  tags: create        

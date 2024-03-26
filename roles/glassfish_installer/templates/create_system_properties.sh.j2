@@ -1,0 +1,28 @@
+#!/bin/bash
+
+set -e
+
+. /home/{{ glassfish_user }}/.bash_profile
+
+# Generado por Ansible - No modificar manualmente
+
+ASADMIN="{{ gf_asadmin_bin }}"
+PASSWORDFILE="{{ gf_password_dir }}"
+ADMIN_USER="{{ gf_asadmin_user }}"
+
+{% if system_properties is defined and system_properties | length > 0 %}
+  {% for item in system_properties %}
+  echo "Creando propiedades de sistema para el target: {{ item.target }}"
+
+    {% for name, value in item.properties.items() %}
+      {% set escaped_value = value | replace("\\", "\\\\") | replace("/", "\\/") | replace(";", "\\;") | replace("!", "\\!") | replace("*", "\\*") | replace("=", "\\=") | replace(":", "\\:") %}
+      PROPERTY="{{ name }}={{ escaped_value }}"
+
+      echo "Aplicando propiedad de sistema: $PROPERTY en {{ item.target }}"
+      $ASADMIN --user $ADMIN_USER --passwordfile $PASSWORDFILE create-system-properties --target {{ item.target }} "$PROPERTY"
+
+    {% endfor %}
+  {% endfor %}
+{% else %}
+  echo "No hay system_properties definidas, omitiendo la creación de propiedades del sistema."
+{% endif %}

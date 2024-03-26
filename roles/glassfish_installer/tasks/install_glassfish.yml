@@ -1,0 +1,57 @@
+## DEPENDENCIAS
+
+- name: Agregar tarea de instalacion de paquetes
+  include_tasks: install_os_packages.yml
+  tags: install
+
+- name: Verificar si GlassFish ya está instalado
+  ansible.builtin.stat:
+    path: "{{ glassfish_home }}/{{ gf_path_version }}"
+  register: glassfish_directory
+  tags: install
+
+# DESCARGAR GF
+- name: Descargar y Descomprimir Glassfish
+  unarchive:
+    src: "http://download.oracle.com/glassfish/{{ gf_version }}/release/glassfish-{{ gf_version }}.zip"
+    dest: "{{ glassfish_home }}"
+    remote_src: yes
+  when: not glassfish_directory.stat.exists
+  tags: install
+
+# DEPENDENCIAS DGSISAN
+- name: Agregar tarea de dependencias glassfish para DGSISAN
+  include_tasks: dgsisan_dependencies.yml
+  tags:
+    - dgsisan_dependencies
+
+## FIX JAVA 8
+- name: Agregar línea a osgi.properties para que GF3 funcione con JAVA 8
+  lineinfile:
+    path: "{{ glassfish_home }}/{{gf_path_version}}/glassfish/config/osgi.properties"
+    line: "jre-1.8=${jre-1.7}"
+    insertafter: EOF
+  when: gf_version == '3.1.2.2'
+  tags: install
+
+# ## FIX GF5
+# - name: Copiar grizzly-npn-bootstrap.jar a Glassfish 5.0.1 para fix
+#   copy:
+#     src: "dependencies/endorsed/grizzly-npn-bootstrap.jar"
+#     dest: "{{ glassfish_home }}/{{ gf_path_version }}/glassfish/modules/endorsed/"
+#   tags:
+#     - install_gf5
+
+## FIX DEPLOY
+- name: Crear directorio applications/__internal en Glassfish para Deploys
+  file:
+    path: "{{ glassfish_home }}/{{ gf_path_version }}/glassfish/domains/domain1/applications/__internal"
+    state: directory
+    recurse: yes
+    owner: "{{ glassfish_user }}"
+    group: "{{ glassfish_user }}"
+    mode: "u+rwx,g+rwx,o+rwx"
+  tags: install
+# ENVIAR SCRIPTS PRD HIS
+# - include_tasks: install_Scripts_PRD.yml
+

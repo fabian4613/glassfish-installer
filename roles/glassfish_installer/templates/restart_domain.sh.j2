@@ -1,0 +1,20 @@
+#!/bin/bash
+
+. /home/{{ glassfish_user }}/.bash_profile
+
+# Definición de variables para el comando asadmin
+ASADMIN="{{ gf_asadmin_bin }}"
+PASSWORDFILE="{{ gf_password_dir }}"
+ADMIN_USER="{{ gf_asadmin_user }}"
+DOMAIN_NAME="{{ gf_domain_name }}"
+
+
+STOP_DOMAIN_CMD="$ASADMIN --user $ADMIN_USER --passwordfile $PASSWORDFILE stop-domain $DOMAIN_NAME"
+echo "Ejecutando: $STOP_DOMAIN_CMD"
+eval $STOP_DOMAIN_CMD
+
+sleep 3
+
+START_DOMAIN_CMD="$ASADMIN --user $ADMIN_USER --passwordfile $PASSWORDFILE start-domain $DOMAIN_NAME"
+echo "Ejecutando: $START_DOMAIN_CMD"
+eval $START_DOMAIN_CMD

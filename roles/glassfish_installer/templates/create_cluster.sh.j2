@@ -1,0 +1,100 @@
+#!/bin/bash
+
+set -e
+
+. /home/{{ glassfish_user }}/.bash_profile
+
+# Definición de variables para el comando asadmin
+ASADMIN="{{ gf_asadmin_bin }}"
+PASSWORDFILE="{{ gf_password_dir }}"
+ADMIN_USER="{{ gf_asadmin_user }}"
+DOMAIN_NAME="{{ gf_domain_name }}"
+
+# Obtener la lista de dominios y su estado
+DOMAINS_LIST=$(${ASADMIN} --user ${ADMIN_USER} --passwordfile ${PASSWORDFILE} list-domains)
+
+# Verificar si el dominio existe y está en estado 'running'
+if echo "${DOMAINS_LIST}" | grep -q "^$DOMAIN_NAME running$"; then
+  echo "El dominio $DOMAIN_NAME ya se encuentra iniciado. Omitiendo inicio."
+else
+  echo "El dominio $DOMAIN_NAME no está en estado 'running'. Iniciando..."
+  # Iniciar el Dominio
+  START_DOMAIN_CMD="$ASADMIN --user $ADMIN_USER --passwordfile $PASSWORDFILE start-domain $DOMAIN_NAME"
+  echo "Ejecutando: $START_DOMAIN_CMD"
+  eval $START_DOMAIN_CMD
+fi
+
+echo "Cluster $CLUSTER_NAME creado e iniciado correctamente."
+
+{% if clusters is defined and clusters | length > 0 %}
+  {% for cluster in clusters %}
+  # Definición de variables específicas del cluster
+  CLUSTER_NAME="{{ cluster.name }}"
+
+  # Verificar si la instancia ya existe
+  CLUSTERS_LIST=$(${ASADMIN} --user ${ADMIN_USER} --passwordfile ${PASSWORDFILE} list-clusters)
+  if echo "${CLUSTERS_LIST}" | grep -q "^$CLUSTER_NAME\s"; then
+    echo "La instancia $CLUSTER_NAME ya existe. Omitiendo creación."
+  else
+    # Iniciar la construcción del comando create-cluster
+    echo "Creando el cluster: $CLUSTER_NAME"
+    CMD="$ASADMIN --user $ADMIN_USER --passwordfile $PASSWORDFILE create-cluster"
+
+    # Agregar condicionalmente opciones si están definidas
+    {% if cluster.config %}
+    CMD+=" --config {{ cluster.config }}"
+    {% endif %}
+
+    SYSTEM_PROPERTIES=""
+    PROPERTIES=""
+    {% if cluster.system_properties %}
+      {% for prop, value in cluster.system_properties.items() %}
+        {% set escaped_value = value | replace("\\", "\\\\") | replace("/", "\\/") | replace("!", "\\!") | replace("=", "\\=") | replace("*", "\\*") | replace(";", "\\;") | replace(":", "\\:") %}
+        SYSTEM_PROPERTIES+="{{ prop }}={{ escaped_value }}{% if not loop.last %}:{% endif %}"
+      {% endfor %}
+      CMD+=" --systemproperties \"$SYSTEM_PROPERTIES\""
+    {% endif %}
+
+    {% if cluster.properties %}
+      {% for key, value in cluster.properties.items() %}
+        {% set escaped_value = value | replace("\\", "\\\\") | replace("/", "\\/") | replace("!", "\\!") | replace("=", "\\=") | replace("*", "\\*") | replace(";", "\\;") | replace(":", "\\:") %}
+        PROPERTIES+="{{ key }}={{ escaped_value }}{% if not loop.last %}:{% endif %}"
+      {% endfor %}
+      CMD+=" --properties \"$PROPERTIES\""
+    {% endif %}
+
+    {% if cluster.gms_enabled %}
+    CMD+=" --gmsenabled {{ cluster.gms_enabled }}"
+    {% endif %}
+
+    {% if cluster.multicast_address %}
+    CMD+=" --multicastaddress {{ cluster.multicast_address }}"
+    {% endif %}
+
+    {% if cluster.multicast_port %}
+    CMD+=" --multicastport {{ cluster.multicast_port }}"
+    {% endif %}
+
+    {% if cluster.bind_address %}
+    CMD+=" --bindaddress {{ cluster.bind_address }}"
+    {% endif %}
+
+    CMD+=" $CLUSTER_NAME"
+
+    # Ejecutar el comando
+    echo $CMD
+    eval $CMD
+
+    # Iniciar el cluster creado
+    echo "Iniciando el cluster: $CLUSTER_NAME"
+    START_CMD="$ASADMIN --user $ADMIN_USER --passwordfile $PASSWORDFILE start-cluster $CLUSTER_NAME"
+    echo $START_CMD
+    eval $START_CMD
+
+    echo "Cluster $CLUSTER_NAME creado e iniciado correctamente."
+
+  fi
+    {% endfor %}
+  {% else %}
+    echo "No se definieron 'clusters', omitiendo la creación de clusters."
+  {% endif %}

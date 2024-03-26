@@ -1,0 +1,28 @@
+# # DEPENDENCIAS HIS
+- name: Instalar OJDBC 8 para apps HIS.
+  copy:
+    src: "dgsisan/sigehos/ojdbc8.jar"
+    dest: "{{ glassfish_home }}/{{ gf_path_version }}/glassfish/domains/domain1/lib"
+  tags:
+    - dgsisan_dependencies
+
+- name: Instalar Certificados SSL de SIGEHOS.
+  copy:
+    src: "dgsisan/sigehos/cacerts.jks"
+    dest: "{{ glassfish_home }}/{{ gf_path_version }}/glassfish/domains/domain1/lib"
+  tags:
+    - dgsisan_dependencies
+
+- name: Instalar Keystore SSL de SIGEHOS.
+  copy:
+    src: "dgsisan/sigehos/keystore.jks"
+    dest: "{{ glassfish_home }}/{{ gf_path_version }}/glassfish/domains/domain1/lib"
+  tags:
+    - dgsisan_dependencies
+## LOGS
+# - name: LOGs desactivados por default.
+#   copy:
+#     src: "dgsisan/sigehos/logging.properties"
+#     dest: "{{ glassfish_home }}/{{ gf_path_version }}/glassfish/domains/domain1/config/"
+#   tags:
+#     - dgsisan_dependencies

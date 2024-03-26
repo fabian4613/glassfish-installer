@@ -1,0 +1,341 @@
+# vars/localhost.yml
+
+# Creacion de Usuario Glassfish en O.S
+glassfish_uid_user: 1004
+glassfish_gid_user: 1005
+os_alias_scripts: false
+
+
+# Modify according to the name of the uploaded Java JDK in files/
+java_version: "jdk1.8.0_144"
+
+# -------- TEST - no use ----------- #
+# Para obtener URL de descarga: https://sites.google.com/view/java-se-download-url-converter
+#java_download_url: "https://sdlc-esd.oracle.com/ESD6/JSCDL/jdk/8u144-b01/090f390dda5b47b9b721c7dfaa008135/jdk-8u144-linux-x64.tar.gz?GroupName=JSC&FilePath=/ESD6/JSCDL/jdk/8u144-b01/090f390dda5b47b9b721c7dfaa008135/jdk-8u144-linux-x64.tar.gz&BHost=javadl.sun.com&File=jdk-8u144-linux-x64.tar.gz&AuthParam=1710641244_ceb348f86ed44c899ff2600c849e8a89&ext=.gz"
+#java_download_dest: "/tmp/{{ java_version }}.tar.gz"
+
+# ------------- Configuracion de Glassfish -------------- #
+
+# Definir password del DAS
+das_password: "Exitos2021"
+
+jdbc_connection_pools:
+  - pool_name: "toAHCE"
+    datasourceClassName: "oracle.jdbc.pool.OracleDataSource"
+    resourceType: "javax.sql.DataSource"
+    properties:
+      user: "usuario_mf"
+      password: "contraseña_mf"
+      URL: "jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=ind01-scan1.gcba.gob.ar)(PORT=1521))(CONNECT_DATA=(SERVER=DEDICATED)(SERVICE_NAME=sigesanh.gcba.gob.ar)))"
+    additional_attributes:
+      steadypoolsize: 8
+      maxpoolsize: 32
+      maxwait: 60000 # milliseconds
+      poolresize: 2
+      idletimeout: 300 # seconds
+
+jdbc_resources:
+  - jndi_name: "jdbc/pool/mfServiciosPool"
+    connectionpoolid: "toAHCE"
+    enabled: true
+    description: "My JDBC Resource"
+    properties:
+      property1: "sigehos.gcba.gob.ar123#13s!eX"
+      property2: "sigehos.gcba.gob.ar123#13s!eX"
+    target: "AHCE"
+
+# http_listeners:
+#   - name: "http-listener-2"
+#     # address: "0.0.0.0"
+#     port: 8081
+#     # default_virtual_server: "server"
+#     server_name: "BestServerTesting"
+#     # acceptor_threads: 2 # Cambia esto por el número recomendado de procesadores o lo que desees.
+#     # xpowered_by: true
+#     # redirect_port: 443 # A pesar de que parece obsoleto, lo incluímos como referencia.
+#     security_enabled: false
+#     enabled: true
+#     target: "server-config" # O el nombre de tu configuración, cluster o instancia independiente.
+
+clusters:
+  - name: AHCE
+    config:
+    system_properties:
+      test.propiedad.de.system.cluster: "sigehos.gcba.gob.ar123#13s!eX"
+    properties:
+      test.propiedad.de.cluster: "true/123/#!.test*-appHOLAAHCE.com"
+    gms_enabled:
+    multicast_address:
+    multicast_port:
+    bind_address:
+  - name: TEST
+    config:
+    system_properties:
+      test.propiedad.de.system.cluster: "sigehos.gcba.gob.ar123#13s!eX"
+    properties:
+      test.propiedad.de.cluster: "sigehos.gcba.gob.ar123#13s!eX"
+    gms_enabled:
+    multicast_address:
+    multicast_port:
+    bind_address:
+
+instances:
+  # Nombre de la instancia que se va a crear.
+  # El nombre debe cumplir con los siguientes requisitos:
+  # - El nombre sólo puede contener caracteres ASCII.
+  # - El nombre debe empezar por una letra, un número o un carácter de subrayado.
+  # - El nombre sólo puede contener letras en minúscula, letras en mayúscula,
+  #   números, guión, punto y subrayado.
+  # - El nombre debe ser exclusivo en el dominio y no debe coincidir con el nombre
+  #   de otro nodo, cluster, configuración con nombre ni instancia de GlassFish Server.
+  # - El nombre no debe ser "domain", "server" ni otra palabra clave reservada
+  #   para GlassFish Server.
+  - name: "AHCE_01"
+
+    # Nombre del nodo que define el host en el que se va a crear la instancia.
+    # El nodo ya debe existir. Si la instancia debe crearse en el host en el que
+    # se esté ejecutando el servidor de administración de dominio (DAS), use el
+    # dominio del nodo predefinido "localhost-domain1".
+    node: "localhost-domain1"
+
+    # Especifica la configuración con nombre a la que la instancia hace referencia.
+    # La configuración debe existir y no debe llamarse "default-config" ni "server-config".
+    # La especificación de la opción "config:" crea una instancia compartida.
+    # Las opciones "config:" y "cluster:" se excluyen mutuamente. Si se omiten
+    # ambas opciones, se crea una instancia independiente.
+    config: ""
+
+    # Especifica el cluster del que la instancia hereda su configuración.
+    # La especificación de la opción "cluster:" crea una instancia en cluster.
+    # Las opciones "config:" y "cluster:" se excluyen mutuamente. Si se omiten
+    # ambas opciones, se crea una instancia independiente.
+    cluster: "AHCE"
+
+    # Especifica si la instancia está activada para equilibrio de carga.
+    # Los valores posibles son los siguientes:
+    # - true: La instancia está activada para equilibrio de carga (el valor por defecto).
+    #   Cuando una instancia está activada para equilibrio de carga, el equilibrador
+    #   de carga envía solicitudes a la instancia.
+    # - false: La instancia está desactivada para el equilibrio de carga.
+    #   Cuando una instancia está desactivada para el equilibrio de carga, el
+    #   equilibrador de carga no envía solicitudes a la instancia.
+    lbenabled: ""
+
+    #  Determina el número con el que debe comenzar la asignación de
+    #  puertos. Una instancia utiliza un cierto número de puertos que se
+    #  asignan estáticamente. El valor portbase determina dónde comienza
+    #  la asignación. Los valores de los puertos se calculan del modo
+    #  siguiente:
+
+    #  ·   Puerto de administración: portbase + 48
+
+    #  ·   Puerto de Listener HTTP: portbase + 80
+
+    #  ·   Puerto de Listener HTTPS: portbase + 81
+
+    #  ·   Puerto de JMS: portbase + 76
+
+    #  ·   Puerto de Listener de IIOP: portbase + 37
+
+    #  ·   Puerto de Listener de IIOP seguro: portbase + 38
+
+    #  ·   Puerto de IIOP seguro con autenticación mutua: portbase + 39
+
+    #  ·   Puerto JMX: portbase + 86
+
+    #  ·   Puerto del depurador JPA: portbase + 9
+
+    #  ·   Puerto del Servicio de shell Felix para administración del
+    #      módulo OSGi: portbase + 66
+    portbase: ""
+
+    # Especifica si se debe comprobar la disponibilidad de los puertos de
+    # administración, HTTP, JMS, JMX e IIOP. El valor por defecto es
+    # true.
+    checkports: ""
+
+    #   Define las propiedades del sistema para la instancia. Estas propiedades
+    #   sustituyen las definiciones de propiedades de configuración de puertos en
+    #   la configuración de la instancia. La configuración de puertos predefinida
+    #   se debe sustituir si, por ejemplo, dos instancias en cluster residen en el
+    #   mismo host. En esta situación, la configuración de puertos para una instancia
+    #   debe sustituirse porque las dos instancias comparten la misma configuración.
+    system_properties:
+      #   Están disponibles las siguientes propiedades:
+      #            ASADMIN_LISTENER_PORT
+      #                Esta propiedad especifica el número de puerto del puerto HTTP o
+      #                HTTPS puerto a través del cual el DAS se conecta a la instancia
+      #                para administrar la instancia. Los valores válidos son 1-65535.
+      #                En sistemas UNIX, la creación de sockets de escucha en los
+      #                puertos 1-1024 requiere privilegios de superusuario.
+
+      #            HTTP_LISTENER_PORT
+      #                Esta propiedad especifica el número del puerto que se utiliza
+      #                para recibir las solicitudes HTTP. Los valores válidos son
+      #                1-65535. En sistemas UNIX, la creación de sockets de escucha en
+      #                los puertos 1-1024 requiere privilegios de superusuario.
+
+      #            HTTP_SSL_LISTENER_PORT
+      #                Esta propiedad especifica el número del puerto que se utiliza
+      #                para recibir solicitudes HTTPS. Los valores válidos son
+      #                1-65535. En sistemas UNIX, la creación de sockets de escucha en
+      #                los puertos 1-1024 requiere privilegios de superusuario.
+
+      #            IIOP_LISTENER_PORT
+      #                Esta propiedad especifica el número del puerto que se utiliza
+      #                para las conexiones IIOP. Los valores válidos son 1-65535. En
+      #                sistemas UNIX, la creación de sockets de escucha en los puertos
+      #                1-1024 requiere privilegios de superusuario.
+
+      #            IIOP_SSL_LISTENER_PORT
+      #                Esta propiedad especifica el número del puerto que se utiliza
+      #                para conexiones IIOP seguras. Los valores válidos son 1-65535.
+      #                En sistemas UNIX, la creación de sockets de escucha en los
+      #                puertos 1-1024 requiere privilegios de superusuario.
+
+      #            IIOP_SSL_MUTUALAUTH_PORT
+      #                Esta propiedad especifica el número del puerto que se utiliza
+      #                para conexiones IIOP seguras con autenticación de cliente. Los
+      #                valores válidos son 1-65535. En sistemas UNIX, la creación de
+      #                sockets de escucha en los puertos 1-1024 requiere privilegios
+      #                de superusuario.
+
+      #            JAVA_DEBUGGER_PORT
+      #                Esta propiedad especifica el número del puerto que se utiliza
+      #                para las conexiones con el depurador de Java Platform Debugger
+      #                Architecture (JPDA)
+      #                (http://java.sun.com/javase/technologies/core/toolsapis/jpda/).
+      #                Los valores válidos son 1-65535. En sistemas UNIX, la creación
+      #                de sockets de escucha en los puertos 1-1024 requiere
+      #                privilegios de superusuario.
+
+      #            JMS_PROVIDER_PORT
+      #                Esta propiedad especifica el número de puerto del proveedor de
+      #                Java Message Service. Los valores válidos son 1-65535. En
+      #                sistemas UNIX, la creación de sockets de escucha en los puertos
+      #                1-1024 requiere privilegios de superusuario.
+
+      #            JMX_SYSTEM_CONNECTOR_PORT
+      #                Esta propiedad especifica el número de puerto en el que escucha
+      #                el conector JMX. Los valores válidos son 1-65535. En sistemas
+      #                UNIX, la creación de sockets de escucha en los puertos 1-1024
+      #                requiere privilegios de superusuario.
+
+      #            OSGI_SHELL_TELNET_PORT
+      #                Esta propiedad especifica el número del puerto utilizado para
+      #                las conexiones con el Shell remoto Apache Felix
+      #                (http://felix.apache.org/site/apache-felix-remote-shell.html).
+      #                Este shell utiliza el servicio Felix shell para interactuar con
+      #                el subsistema de administración de módulos OSGi. Los valores
+      #                válidos son 1-65535. En sistemas UNIX, para la creación de
+      #                sockets de recepción en los puertos 1-1024 se necesitan
+      #                privilegios de superusuario.
+      HTTP_LISTENER_PORT: 28080
+
+  - name: TEST_01
+    node: "localhost-domain1"
+    config: ""
+    cluster: "TEST"
+    lbenabled: ""
+    portbase: ""
+    checkports: ""
+    system_properties:
+      HTTP_LISTENER_PORT: 28081
+
+#  system_properties - Agrega o actualiza uno o más elementos de propiedades
+#  del sistema a los que se puede hacer referencia en otro lugar de la
+#  configuración.
+system_properties:
+  #  target:
+  #      Los destinos válidos para este subcomando son instance, cluster,
+  #      configuration, domain y server. Server es la opción por defecto.
+  #      Los valores válidos son:
+
+  #      server
+  #          Crea las propiedades en la instancia de servidor por defecto.
+  #          Éste es el valor por defecto.
+
+  #      domain
+  #          Crea las propiedades de todas las instancias del servidor en el
+  #          dominio por defecto.
+
+  #      configuration_name
+  #          Crea las propiedades en la configuración especificada.
+
+  #      cluster_name
+  #          Crea las propiedades en todas las instancias de servidor en el
+  #          cluster especificado.
+
+  #      instance_name
+  #          Crea las propiedades en una instancia de servidor determinada.
+  - target:
+      "AHCE-config"
+
+      #  Pares de nombre/valor de propiedades del sistema que se deben
+      #  agregar al destino especificado.
+      #  Si alguna de las propiedades de sistema se había definido
+      #  anteriormente, se actualizará con los nuevos valores.
+    properties:
+      dominio.controller.service.baseurl: "https://his.gcba.gob.ar"
+
+  - target: "TEST-config"
+    properties:
+      test.service: "https://test.service.com.ar/his/#app12"
+
+# Crea opciones para el iniciador de aplicaciones de Java.
+jvm_options:
+  #  target:
+  #      Especifica el destino en el que va a crear las opciones del
+  #      iniciador de aplicaciones Java.
+
+  #      Los valores válidos son los siguientes:
+
+  #      server
+  #          Especifica el DAS (por defecto).
+
+  #      instance-name
+  #          Especifica una instancia de GlassFish Server.
+
+  #      cluster-name
+  #          Especifica un cluster.
+
+  #      configuration-name
+  #          Especifica una configuración con nombre.
+  - target:
+      "AHCE"
+
+      #  La adición de algunas opciones requiere reiniciar el servidor para que
+      #  los cambios surtan efecto. Otras opciones se definen inmediatamente en
+      #  el entorno del servidor de administración de dominio (DAS) y no
+      #  requieren un reinicio. La necesidad de reiniciar depende del tipo de
+      #  opción.
+
+      #  ·   No es necesario reiniciar para las propiedades del sistema de Java
+      #      cuyos nombres no comiencen por -Djava.  o Djavax (incluido el punto
+      #      final). Por ejemplo, reiniciar no es necesario para la siguiente
+      #      propiedad del sistema de Java:
+
+      #      -Denvironment=Production
+
+      #  ·   Sí es necesario reiniciar para las siguientes opciones:
+
+      #      ·   Propiedades del sistema de Java cuyos nombres comiencen por
+      #          -Djava.  o -Djavax.  (incluyendo el punto final). Por ejemplo:
+      #          -Djava.security.manager
+
+      #      ·   Parámetros de inicio del lanzador de aplicaciones Java. Por
+      #          ejemplo:
+
+      #          -client
+      #          -Xmx1024m
+      #          -d64
+    options:
+      - "-Denvironment=monasterio_vmcompartida"
+      - "-Xmx768m"
+      - "-Xms768m"
+      - "-client"
+
+  - target: "TEST"
+    options:
+      - "-Xmx512m"
+      - "-Xms512m"

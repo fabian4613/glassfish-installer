@@ -1,0 +1,43 @@
+#!/bin/bash
+
+# Cargar las variables de entorno del usuario glassfish
+source /home/{{ glassfish_user }}/.bash_profile
+
+# Definición de variables para el comando asadmin
+ASADMIN="{{ gf_asadmin_bin }}"
+PASSWORDFILE="{{ gf_password_dir }}"
+ADMIN_USER="{{ gf_asadmin_user }}"
+
+{% if instances is defined and instances | length > 0 %}
+  {% for instance in instances %}
+    # Verificar si la instancia ya existe
+    INSTANCES_LIST=$(${ASADMIN} --user ${ADMIN_USER} --passwordfile ${PASSWORDFILE} list-instances)
+    if echo "${INSTANCES_LIST}" | grep -q "^{{ instance.name }}\s"; then
+      echo "La instancia {{ instance.name }} ya existe. Omitiendo creación."
+    else
+      # Inicialización de variables de comando opcionales
+      CONFIG="{% if instance.config %}--config {{ instance.config }}{% endif %}"
+      CLUSTER="{% if instance.cluster %}--cluster {{ instance.cluster }}{% endif %}"
+      LBENABLED="{% if instance.lbenabled %}--lbenabled {{ instance.lbenabled }}{% endif %}"
+      PORTBASE="{% if instance.portbase %}--portbase {{ instance.portbase }}{% endif %}"
+      CHECKPORTS="{% if instance.checkports %}--checkports {{ instance.checkports }}{% endif %}"
+      SYSTEM_PROPERTIES=$(echo {% for prop, value in instance.system_properties.items() %}{{ prop }}={{ value }}{% if not loop.last %}:{% endif %}{% endfor %})
+
+      # Construcción del comando
+      CMD="${ASADMIN} --user ${ADMIN_USER} --passwordfile ${PASSWORDFILE} create-instance --node {{ instance.node }}"
+      [ ! -z "$CONFIG" ] && CMD+=" $CONFIG"
+      [ ! -z "$CLUSTER" ] && CMD+=" $CLUSTER"
+      [ ! -z "$LBENABLED" ] && CMD+=" $LBENABLED"
+      [ ! -z "$PORTBASE" ] && CMD+=" $PORTBASE"
+      [ ! -z "$CHECKPORTS" ] && CMD+=" $CHECKPORTS"
+      [ ! -z "$SYSTEM_PROPERTIES" ] && CMD+=" --systemproperties $SYSTEM_PROPERTIES"
+      CMD+=" {{ instance.name }}"
+
+      # Ejecución del comando
+      echo "[ {{ instance.cluster }}] Creando la instancia: {{ instance.name }} en el nodo {{ instance.node }}"
+      eval $CMD
+    fi
+  {% endfor %}
+{% else %}
+  echo "No hay 'instances' definidas, omitiendo la creación de instancias."
+{% endif %}
