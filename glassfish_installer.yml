@@ -1,0 +1,73 @@
+---
+# glassfish_installer.yml
+
+# PENDIENTE:
+# desactivar https en glassfish. dar posiblidad mediante variable.
+# enviar depedencias solo si no existen en task: install_glassfish.yml
+# tuning de domain mediante env
+# tuning de cluster mediante env
+# tuning jvm_dgsisan ON or OFF mediante env
+# posiblidad de actualizar sin eliminar glassfish - logica.
+#
+
+# Playbook de Instalacion/Desintalacion de Server App Glassfish para Servidores Linux
+# Autor: Carlos Fabian Pavia - DGSISAN
+
+# 1. Instalacion de Glassfish
+# 2. Instalacion de Java
+# 3. Variables de entorno de Glassfish y Java configuradas.
+# 4. Creacion de Cluster mediante env
+# 5. Creacion de Instancias mediante env
+# 6. Creacion de System-Properties mediante env
+# 7. Creaccion de jvm-options mediante env
+
+# ansible-playbook -i inventory/inventory.ini --limit HOST --tags create,install glassfish_installer.yml
+
+# Instalar GF,JAVA
+
+# tag: create
+#   • Crea usuario Glassfish segun GID y UID segun variables.
+#   • Crea directorio /GLASSFISH_HOME
+#   • Crea configuracion de Glassfish (Instancias, clusters, properties.. etc.) segun variables.
+
+# tag: install
+#   • Instala Glassfish 3.
+#   • Instala Java JDK 8.
+
+# tag: dgsisan_dependencies
+#   • Instala dependencias SIGEHOS (Certificados SSL y OJDBC8).
+
+# tag: dgsisan_scripts
+#   • Instala Scripts del directorio definido en variables de inventory/<env>.yml
+
+# ansible-playbook -i inventory/<env>.yml --tags <tag,tag> glassfish_installer.yml
+
+# TEST
+
+# uninstall glassfish
+#   • ansible-playbook -i inventory/test.yml --tags gf_uninstall glassfish_installer.yml
+
+# install glassfish only
+#   • ansible-playbook -i inventory/test.yml --tags install glassfish_installer.yml
+
+# config glassfish only
+#   • ansible-playbook -i inventory/test.yml --tags create glassfish_installer.yml
+
+# dgsisan_scripts only
+#   • ansible-playbook -i inventory/test.yml --tags dgsisan_scripts glassfish_installer.yml
+
+# dgsisan_dependencies only
+#   • ansible-playbook -i inventory/test.yml --tags dgsisan_dependencies glassfish_installer.yml
+
+# PARA EJECUTAR ESTA TAREA EL USUARIO DEBE TENER ACCESO A SUDO EN SUDOVISUDO DEL HOST REMOTO
+- name: Test Installer Glassfish
+  hosts: mipc
+  become: true
+  become_method: sudo
+  vars:
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+  # Reúne información del sistema operativo y hardware del host.
+  gather_facts: yes
+  roles:
+    # Llama al rol 'glassfish_installer' que contiene todas las tareas de diagnóstico.
+    - role: glassfish_installer

@@ -1,0 +1,9 @@
+# inventory/test.yml
+all:
+  children:
+    mipc:
+      hosts:
+        localhost:
+          ansible_connection: local
+      #vars:
+        #script_folder: dgsisan/gf_scripts/<dir>
